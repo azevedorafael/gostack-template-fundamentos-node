@@ -13,20 +13,6 @@ interface CreateTransactionDTO {
   type: 'income' | 'outcome';
 }
 
-function agruparPor(
-  objetoArray: CreateTransactionDTO[],
-  propriedade: string,
-): any {
-  return objetoArray.reduce(function (acc: any, obj: any) {
-    const key = obj[propriedade];
-    if (!acc[key]) {
-      acc[key] = [];
-    }
-    acc[key].push(obj);
-    return acc;
-  }, {});
-}
-
 class TransactionsRepository {
   private transactions: Transaction[];
 
@@ -39,30 +25,24 @@ class TransactionsRepository {
   }
 
   public getBalance(): Balance {
-    const groupByType = agruparPor(this.transactions, 'type');
+    const { income, outcome } = this.transactions.reduce(
+      (accumulator, transaction) => {
+        accumulator[transaction.type] =
+          accumulator[transaction.type] + transaction.value ||
+          transaction.value;
 
-    const { outcome, income } = groupByType;
-    const outcomeSum = outcome.reduce(function (
-      total: number,
-      currentValue: CreateTransactionDTO,
-    ) {
-      return total + currentValue.value;
-    },
-    0);
-    const incomeSum = income.reduce(function (
-      total: number,
-      currentValue: CreateTransactionDTO,
-    ) {
-      return total + currentValue.value;
-    },
-    0);
-    const newObj = {
-      income: incomeSum,
-      outcome: outcomeSum,
-      total: incomeSum - outcomeSum,
+        return accumulator;
+      },
+      { income: 0, outcome: 0 },
+    );
+
+    const balance = {
+      income,
+      outcome,
+      total: income - outcome,
     };
 
-    return newObj;
+    return balance;
   }
 
   public create({ title, value, type }: CreateTransactionDTO): Transaction {

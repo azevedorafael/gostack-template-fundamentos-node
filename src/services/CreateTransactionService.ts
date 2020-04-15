@@ -17,12 +17,10 @@ class CreateTransactionService {
   }
 
   public execute({ title, value, type }: Request): Transaction {
-    // const findAppointmentInSameDate = this.transactionsRepository.findByDate(
-    //   appointmentDate,
-    // );
+    const balance = this.transactionsRepository.getBalance();
 
-    // if (findAppointmentInSameDate)
-    //   throw Error('This appointment is already booked');
+    if (type === 'outcome' && value > balance.total)
+      throw Error('Insufficient balance');
 
     const transaction = this.transactionsRepository.create({
       title,
